@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>属性文字ずらしツール</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700;800&family=M+PLUS+Rounded+1c:wght@700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header class="hero">
+        <div>
+          <h1>属性文字ずらしツール</h1>
+        </div>
+      </header>
+
+      <section class="panel">
+        <h2>入力</h2>
+        <label class="input-card c1">
+          <span class="input-head">文字列</span>
+          <textarea id="sourceInput" rows="5" autocomplete="off" spellcheck="false" placeholder="ここに文字列を入力"></textarea>
+        </label>
+        <div class="note-row">
+          <div id="inputMeta" class="pill muted">未入力</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>検索設定</h2>
+        <div class="settings-grid">
+          <label class="field-row">
+            <span>シフト数</span>
+            <input id="shiftSpec" type="text" autocomplete="off" placeholder="ここでシフト数を指定" />
+          </label>
+          <label class="check-row">
+            <input id="loopAllowed" type="checkbox" />
+            <span>ループ許可</span>
+          </label>
+          <label class="field-row short">
+            <span>最大表示件数</span>
+            <input id="maxResults" type="number" min="1" max="50000" value="500" />
+          </label>
+          <button id="searchBtn" type="button" class="search">検索</button>
+        </div>
+        <div id="errorBox" class="error-box" aria-live="polite"></div>
+      </section>
+
+      <section class="panel">
+        <h2>辞書選択</h2>
+        <fieldset>
+          <legend>検索対象の辞書（複数選択可）</legend>
+          <div class="dict-groups">
+            <div class="dict-group">
+              <h3>日本語辞書</h3>
+              <div class="dict-grid">
+                <label><input type="checkbox" name="targetDict" value="kobuta" checked /> 仔豚辞書</label>
+                <label><input type="checkbox" name="targetDict" value="general" checked /> 一般語辞書</label>
+                <label><input type="checkbox" name="targetDict" value="item" checked /> イラスト辞書</label>
+              </div>
+            </div>
+            <div class="dict-group">
+              <h3>英語辞書</h3>
+              <div class="dict-grid">
+                <label><input type="checkbox" name="targetDict" value="english" checked /> 英語辞書</label>
+                <label><input type="checkbox" name="targetDict" value="roma" /> ローマ字辞書</label>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="panel">
+        <div class="results-header">
+          <h2>結果</h2>
+          <div class="sort-row">
+            <label for="sortOrder">並び順</label>
+            <select id="sortOrder">
+              <option value="short">文字数が短い順</option>
+              <option value="long">文字数が長い順</option>
+              <option value="shift">シフト数順</option>
+            </select>
+          </div>
+        </div>
+        <div class="summary-row">
+          <div id="summary" class="summary-badge">まだ検索していません</div>
+        </div>
+        <div id="results"></div>
+      </section>
+    </main>
+
+    <script src="dict-data.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
