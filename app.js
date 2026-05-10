@@ -27,6 +27,7 @@ const sourceInputEl = document.getElementById('sourceInput');
 const inputMetaEl = document.getElementById('inputMeta');
 const shiftSpecEl = document.getElementById('shiftSpec');
 const loopAllowedEl = document.getElementById('loopAllowed');
+const omitRepeatPairsEl = document.getElementById('omitRepeatPairs');
 const maxResultsEl = document.getElementById('maxResults');
 const sortOrderEl = document.getElementById('sortOrder');
 const searchBtnEl = document.getElementById('searchBtn');
@@ -44,6 +45,20 @@ function normalizeSource(value) {
 
 function splitChars(value) {
   return Array.from(value);
+}
+
+function isRepeatedWord(word) {
+  const chars = splitChars(word);
+  if (chars.length < 2 || chars.length % 2 !== 0) {
+    return false;
+  }
+  const half = chars.length / 2;
+  for (let index = 0; index < half; index += 1) {
+    if (chars[index] !== chars[index + half]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function escapeHtml(value) {
@@ -298,6 +313,9 @@ function findShiftPairs(settings) {
         }
         if (charIndex === sourceChars.length) {
           for (const targetEntry of trieNode.terminalEntries) {
+            if (settings.omitRepeatPairs && isRepeatedWord(sourceEntry.word) && isRepeatedWord(targetEntry.word)) {
+              continue;
+            }
             const key = `${shift}\u0001${sourceEntry.word}\u0001${targetEntry.word}\u0001${path.map((item) => item.chunkIndex).join(',')}`;
             if (resultKeys.has(key)) {
               continue;
@@ -369,6 +387,7 @@ function validateForm() {
     dictIds,
     maxResults,
     loopAllowed: loopAllowedEl.checked,
+    omitRepeatPairs: omitRepeatPairsEl.checked,
   };
 }
 
