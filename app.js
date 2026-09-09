@@ -288,29 +288,18 @@ function findShiftPairs(settings) {
   const merged = mergeDictionaries(settings.dictIds);
   const results = [];
   const resultKeys = new Set();
-  let truncated = false;
 
   for (const shift of settings.shifts) {
-    if (truncated) {
-      break;
-    }
-
     const model = buildShiftModel(settings.tokens, shift, settings.loopAllowed);
     if (model.validStates.length === 0) {
       continue;
     }
 
     for (const sourceEntry of merged.entries) {
-      if (truncated) {
-        break;
-      }
       const sourceChars = splitChars(sourceEntry.word);
       const path = [];
 
       function dfs(charIndex, trieNode) {
-        if (truncated) {
-          return;
-        }
         if (charIndex === sourceChars.length) {
           for (const targetEntry of trieNode.terminalEntries) {
             if (settings.omitRepeatPairs && isRepeatedWord(sourceEntry.word) && isRepeatedWord(targetEntry.word)) {
@@ -328,10 +317,6 @@ function findShiftPairs(settings) {
               path: [...path],
               length: sourceEntry.length,
             });
-            if (results.length >= settings.maxResults) {
-              truncated = true;
-              return;
-            }
           }
           return;
         }
@@ -349,9 +334,6 @@ function findShiftPairs(settings) {
           path.push(transition);
           dfs(charIndex + 1, nextNode);
           path.pop();
-          if (truncated) {
-            return;
-          }
         }
       }
 
@@ -359,7 +341,7 @@ function findShiftPairs(settings) {
     }
   }
 
-  return { results, truncated };
+  return { results };
 }
 
 function validateForm() {
@@ -468,13 +450,33 @@ function renderPathSummary(path) {
   return items.join('');
 }
 
+function exceedsPerShiftDisplayLimit(rows, maxResults) {
+  const countByShift = new Map();
+  return rows.some((row) => {
+    const nextCount = (countByShift.get(row.shift) || 0) + 1;
+    countByShift.set(row.shift, nextCount);
+    return nextCount > maxResults;
+  });
+}
+
 function renderResults(rows, truncated, settings) {
   if (rows.length === 0) {
     resultsEl.innerHTML = '<div class="empty">ヒットなし</div>';
     return;
   }
 
-  resultsEl.innerHTML = rows
+  const displayedCountByShift = new Map();
+  const displayedRows = rows.filter((row) => {
+    const currentCount = displayedCountByShift.get(row.shift) || 0;
+    if (currentCount >= settings.maxResults) {
+      return false;
+    }
+    displayedCountByShift.set(row.shift, currentCount + 1);
+    return true;
+  });
+  const displayTruncated = truncated || rows.length > displayedRows.length;
+
+  resultsEl.innerHTML = displayedRows
     .map((row, index) => `
       <article class="result-item">
         <div class="result-head">
@@ -500,8 +502,8 @@ function renderResults(rows, truncated, settings) {
     `)
     .join('');
 
-  if (truncated) {
-    resultsEl.insertAdjacentHTML('beforeend', '<div class="more-note">表示件数の上限に達したため、結果を途中で打ち切っています。</div>');
+  if (displayTruncated) {
+    resultsEl.insertAdjacentHTML('beforeend', '<div class="more-note">表示件数の上限に達したため、一部の結果だけを表示しています。</div>');
   }
 }
 
@@ -536,10 +538,11 @@ function runSearch() {
     window.setTimeout(() => {
       try {
         const startedAt = performance.now();
-        const { results, truncated } = findShiftPairs(settings);
+        const { results } = findShiftPairs(settings);
         const elapsed = Math.round(performance.now() - startedAt);
-        state.lastSearch = { rows: results, truncated, settings };
-        summaryEl.textContent = `ヒット数: ${results.length} / ${elapsed}ms`;
+        state.lastSearch = { rows: results, truncated: false, settings };
+        const displayNote = exceedsPerShiftDisplayLimit(results, settings.maxResults) ? `（各シフト最大 ${settings.maxResults}件表示）` : '';
+        summaryEl.textContent = `ヒット数: ${results.length}${displayNote} / ${elapsed}ms`;
         rerenderLastResults();
       } catch (error) {
         summaryEl.textContent = '検索エラー';
